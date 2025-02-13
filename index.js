@@ -57,7 +57,8 @@ const writeLogToHTML = (message) => {
 };
 
 const setupWebSocket = () => {
-  const addr = "ws://" + location.hostname + ":" + location.port
+  const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+  const addr = \`\${protocol}//\${location.hostname}:\${location.port}\`;
   const ws = new WebSocket(addr);
   ws.onopen = () => {
     writeLog("Connected to WebSocket server");
