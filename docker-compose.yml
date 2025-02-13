@@ -2,5 +2,20 @@ services:
   example:
     build: .
     restart: unless-stopped
+    hostname: example
     ports:
       - "8000:8000"
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    restart: unless-stopped
+    command:
+      - "start"
+      - "--all"
+      - "--config"
+      - "/etc/ngrok.yml"
+      - "--log=stdout"
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    volumes:
+      - ./ngrok/ngrok.yml:/etc/ngrok.yml
