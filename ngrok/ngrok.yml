@@ -1,0 +1,6 @@
+version: "3"
+tunnels:
+  website:
+    proto: http
+    addr: example:8000
+    host_header: rewrite
