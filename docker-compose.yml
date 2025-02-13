@@ -2,5 +2,18 @@ services:
   example:
     build: .
     restart: unless-stopped
+    hostname: example
     ports:
       - "8000:8000"
+
+  frpc:
+    build: ./frp
+    restart: unless-stopped
+    environment:
+      - FRP_AUTH_TOKEN=${FRP_AUTH_TOKEN}
+      - FRP_SERVER_ADDR=${FRP_SERVER_ADDR}
+      - FRP_SERVER_PORT=${FRP_SERVER_PORT}
+      - FRP_SUBDOMAIN=${FRP_SUBDOMAIN}
+      - FRP_PROXY_NAME=${FRP_PROXY_NAME}
+    volumes:
+      - ./frp/frpc.toml:/etc/frp/frpc.toml
