@@ -11,6 +11,11 @@ I used this to test if a HTTPS -> HTTP proxy works with WebSocket connections.
 - The server is not secure and does not handle errors properly.
 - The server is not optimized for performance.
 
+## Proxy Setup
+
+- frp ... https://github.com/kitsuyui/docker-http-ws-example/tree/frp
+- ngrok ... https://github.com/kitsuyui/docker-http-ws-example/tree/ngrok
+
 ## Usage
 
 ```sh
