@@ -4,3 +4,24 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+
+  oauth2_proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy
+    restart: unless-stopped
+    ports:
+      - "4180:4180"
+    environment:
+      - "OAUTH2_PROXY_PROVIDER=oidc"
+      - "OAUTH2_PROXY_CLIENT_ID=${OAUTH2_PROXY_CLIENT_ID}"
+      - "OAUTH2_PROXY_CLIENT_SECRET=${OAUTH2_PROXY_CLIENT_SECRET}"
+      - "OAUTH2_PROXY_OIDC_ISSUER_URL=${OAUTH2_PROXY_OIDC_ISSUER_URL}"
+      - "OAUTH2_PROXY_COOKIE_SECRET=${OAUTH2_PROXY_COOKIE_SECRET}"
+      - "OAUTH2_PROXY_COOKIE_NAME=${OAUTH2_PROXY_COOKIE_NAME}"
+      - "OAUTH2_PROXY_EMAIL_DOMAINS=${OAUTH2_PROXY_EMAIL_DOMAINS}"
+      - "OAUTH2_PROXY_PASS_AUTHORIZATION_HEADER=true"
+      - "OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180"
+      - "OAUTH2_PROXY_UPSTREAMS=http://example:8000"
+      # The following line is for development purposes (to run with HTTP)
+      # You should use HTTPS in production
+      - "OAUTH2_PROXY_COOKIE_SECURE=false"
+      - "OAUTH2_PROXY_REDIRECT_URL=http://localhost:4180/oauth2/callback"
