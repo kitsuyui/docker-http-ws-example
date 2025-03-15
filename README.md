@@ -15,6 +15,7 @@ I used this to test if a HTTPS -> HTTP proxy works with WebSocket connections.
 
 - frp ... https://github.com/kitsuyui/docker-http-ws-example/tree/frp
 - ngrok ... https://github.com/kitsuyui/docker-http-ws-example/tree/ngrok
+- oauth2-proxy ... https://github.com/kitsuyui/docker-http-ws-example/tree/oauth2-proxy
 
 ## Usage
 
