@@ -1,0 +1,10 @@
+# https://github.com/k1LoW/octocov?tab=readme-ov-file#configuration
+diff:
+  datastores:
+    - artifact://${GITHUB_REPOSITORY}
+comment:
+  if: is_pull_request
+report:
+  if: is_default_branch
+  datastores:
+    - artifact://${GITHUB_REPOSITORY}

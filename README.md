@@ -1,5 +1,7 @@
 # docker-http-ws-example
 
+![Coverage](https://raw.githubusercontent.com/kitsuyui/octocov-central/main/badges/kitsuyui/docker-http-ws-example/coverage.svg)
+
 This is a simple example of a web server that serves HTTP and WebSocket requests.
 Useful for testing WebSocket connections.
 
