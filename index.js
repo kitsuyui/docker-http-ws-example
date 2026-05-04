@@ -20,9 +20,8 @@ const main = () => {
   const wsServer = new WebSocketServer({ server });
 
   wsServer.on("connection", (ws) => {
-    ws.on("open", () => {
-      ws.send("PING");
-    });
+    console.log("Sending: PING");
+    ws.send("PING");
 
     ws.on("message", (message) => {
       console.log(`Received: ${message}`);
@@ -95,4 +94,3 @@ const content = `<!DOCTYPE html>
 </html>`;
 
 main();
-
