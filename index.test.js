@@ -26,6 +26,25 @@ test("websocket connection supports server and client ping flow", async (t) => {
   assert.equal(await readNextMessage(ws), "PONG");
 });
 
+test("environment host and port override command line defaults", async (t) => {
+  const server = spawn(process.execPath, ["index.js", "192.0.2.1", "8000"], {
+    cwd: import.meta.dirname,
+    env: {
+      ...process.env,
+      HOST: "127.0.0.1",
+      PORT: "0",
+    },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  t.after(() => {
+    server.kill();
+  });
+
+  const port = await waitForListeningPort(server);
+  assert.notEqual(port, 8000);
+});
+
 const waitForListeningPort = (server) =>
   new Promise((resolve, reject) => {
     let stdout = "";
