@@ -1,8 +1,14 @@
 import { createServer } from 'http';
+import { pathToFileURL } from 'url';
 import { WebSocketServer } from 'ws';
 
 const HOST = process.argv[2] || process.env.HOST || '127.0.0.1';
 const PORT = process.argv[3] || process.env.PORT || 8080;
+
+export const createWebSocketAddress = (location) => {
+  const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+  return `${protocol}//${location.host}`;
+};
 
 const main = () => {
   const host = HOST;
@@ -56,8 +62,8 @@ const writeLogToHTML = (message) => {
 };
 
 const setupWebSocket = () => {
-  const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-  const addr = \`\${protocol}//\${location.hostname}:\${location.port}\`;
+  const createWebSocketAddress = ${createWebSocketAddress.toString()};
+  const addr = createWebSocketAddress(location);
   const ws = new WebSocket(addr);
   ws.onopen = () => {
     writeLog("Connected to WebSocket server");
@@ -93,4 +99,6 @@ const content = `<!DOCTYPE html>
   </body>
 </html>`;
 
-main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}
