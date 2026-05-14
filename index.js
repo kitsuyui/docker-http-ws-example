@@ -1,8 +1,8 @@
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
 
-const HOST = process.env.HOST || process.argv[2] || '127.0.0.1';
-const PORT = process.env.PORT || process.argv[3] || 8080;
+const HOST = process.argv[2] || process.env.HOST || '127.0.0.1';
+const PORT = process.argv[3] || process.env.PORT || 8080;
 
 const main = () => {
   const host = HOST;
