@@ -26,6 +26,10 @@ const main = () => {
   const wsServer = new WebSocketServer({ server });
 
   wsServer.on("connection", (ws) => {
+    ws.on("error", (error) => {
+      console.error(`WebSocket error: ${error.message}`);
+    });
+
     console.error("Sending: PING");
     ws.send("PING");
 
