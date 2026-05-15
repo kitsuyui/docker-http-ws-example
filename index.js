@@ -80,8 +80,8 @@ const setupWebSocket = () => {
   ws.onclose = () => {
     writeLog("Disconnected from WebSocket server");
   };
-  ws.onerror = (error) => {
-    writeLog("WebSocket error: " + error.message);
+  ws.onerror = () => {
+    writeLog("WebSocket error");
   };
 };
 
