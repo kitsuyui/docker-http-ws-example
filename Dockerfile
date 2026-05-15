@@ -3,4 +3,6 @@ ADD package.json /package.json
 RUN npm install
 FROM base
 ADD index.js /index.js
-CMD ["npm", "--silent", "start", "0.0.0.0", "8000"]
+ENV HOST=0.0.0.0
+ENV PORT=8000
+CMD ["npm", "--silent", "start"]
