@@ -13,7 +13,7 @@ test("websocket connection supports server and client ping flow", async (t) => {
     server.kill();
   });
 
-  const port = await waitForListeningPort(server);
+  const { port } = await waitForListeningAddress(server);
   const ws = new WebSocket(`ws://127.0.0.1:${port}`);
 
   t.after(() => {
@@ -41,11 +41,11 @@ test("command line host and port override environment defaults", async (t) => {
     server.kill();
   });
 
-  const port = await waitForListeningPort(server);
-  assert.notEqual(port, 8000);
+  const { host } = await waitForListeningAddress(server);
+  assert.equal(host, "127.0.0.1");
 });
 
-const waitForListeningPort = (server) =>
+const waitForListeningAddress = (server) =>
   new Promise((resolve, reject) => {
     let stdout = "";
     let stderr = "";
@@ -68,10 +68,10 @@ const waitForListeningPort = (server) =>
 
     const onStderr = (chunk) => {
       stderr += chunk.toString();
-      const match = stderr.match(/Server running at http:\/\/[^:]+:(\d+)/);
+      const match = stderr.match(/Server running at http:\/\/([^:]+):(\d+)/);
       if (match) {
         cleanup();
-        resolve(Number(match[1]));
+        resolve({ host: match[1], port: Number(match[2]) });
       }
     };
 
