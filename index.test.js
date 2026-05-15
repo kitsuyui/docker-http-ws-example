@@ -64,15 +64,15 @@ const waitForListeningPort = (server) =>
 
     const onStdout = (chunk) => {
       stdout += chunk.toString();
-      const match = stdout.match(/Server running at http:\/\/[^:]+:(\d+)/);
-      if (match) {
-        cleanup();
-        resolve(Number(match[1]));
-      }
     };
 
     const onStderr = (chunk) => {
       stderr += chunk.toString();
+      const match = stderr.match(/Server running at http:\/\/[^:]+:(\d+)/);
+      if (match) {
+        cleanup();
+        resolve(Number(match[1]));
+      }
     };
 
     const onExit = (code, signal) => {

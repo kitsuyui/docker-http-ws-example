@@ -20,13 +20,13 @@ const main = () => {
   const wsServer = new WebSocketServer({ server });
 
   wsServer.on("connection", (ws) => {
-    console.log("Sending: PING");
+    console.error("Sending: PING");
     ws.send("PING");
 
     ws.on("message", (message) => {
-      console.log(`Received: ${message}`);
+      console.error(`Received: ${message}`);
       if (message.toString() === "PING") {
-        console.log("Sending: PONG");
+        console.error("Sending: PONG");
         ws.send("PONG");
       }
     });
@@ -35,7 +35,7 @@ const main = () => {
   server.on("listening", () => {
     const addressInfo = server.address();
     const url = `http://${addressInfo.address}:${addressInfo.port}`;
-    console.log(`Server running at ${url}`);
+    console.error(`Server running at ${url}`);
   });
 
   server.listen(port, host);
