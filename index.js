@@ -16,6 +16,9 @@ const main = () => {
 
   const server = createServer((req, res) => {
     req
+      .on("error", (err) => {
+        console.error("request error:", err);
+      })
       .addListener("end", () => {
         res.writeHead(200, { "Content-Type": "text/html" });
         res.end(content);
@@ -27,13 +30,17 @@ const main = () => {
 
   wsServer.on("connection", (ws) => {
     console.error("Sending: PING");
-    ws.send("PING");
+    ws.send("PING", (err) => {
+      if (err) console.error("ws send error:", err);
+    });
 
     ws.on("message", (message) => {
       console.error(`Received: ${message}`);
       if (message.toString() === "PING") {
         console.error("Sending: PONG");
-        ws.send("PONG");
+        ws.send("PONG", (err) => {
+          if (err) console.error("ws send error:", err);
+        });
       }
     });
   });
@@ -42,6 +49,11 @@ const main = () => {
     const addressInfo = server.address();
     const url = `http://${addressInfo.address}:${addressInfo.port}`;
     console.error(`Server running at ${url}`);
+  });
+
+  server.on("error", (err) => {
+    console.error("server error:", err);
+    process.exit(1);
   });
 
   server.listen(port, host);
