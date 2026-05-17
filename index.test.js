@@ -100,6 +100,59 @@ test("command line host and port override environment defaults", async (t) => {
   assert.equal(host, "127.0.0.1");
 });
 
+test("named host and port flags configure the listening address", async (t) => {
+  const server = spawn(
+    process.execPath,
+    ["index.js", "--host", "127.0.0.1", "--port", "0"],
+    {
+      cwd: import.meta.dirname,
+      env: {
+        ...process.env,
+        HOST: "192.0.2.1",
+        PORT: "8000",
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
+
+  t.after(() => {
+    server.kill();
+  });
+
+  const { host } = await waitForListeningAddress(server);
+  assert.equal(host, "127.0.0.1");
+});
+
+test("equals-form host and port flags configure the listening address", async (t) => {
+  const server = spawn(
+    process.execPath,
+    ["index.js", "--host=127.0.0.1", "--port=0"],
+    {
+      cwd: import.meta.dirname,
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
+
+  t.after(() => {
+    server.kill();
+  });
+
+  const { host } = await waitForListeningAddress(server);
+  assert.equal(host, "127.0.0.1");
+});
+
+test("unknown named flags fail before listening", async () => {
+  const server = spawn(process.execPath, ["index.js", "--hostname"], {
+    cwd: import.meta.dirname,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  const { code, stderr } = await waitForExit(server);
+
+  assert.equal(code, 1);
+  assert.match(stderr, /Unknown option: --hostname/);
+});
+
 test("websocket connection errors stay scoped to the client", async (t) => {
   const server = spawn(process.execPath, ["index.js", "127.0.0.1", "0"], {
     cwd: import.meta.dirname,
@@ -164,6 +217,49 @@ const waitForListeningAddress = (server) =>
     const onExit = (code, signal) => {
       cleanup();
       reject(new Error(`server exited before listening: ${code ?? signal}`));
+    };
+
+    const onError = (error) => {
+      cleanup();
+      reject(error);
+    };
+
+    server.stdout.on("data", onStdout);
+    server.stderr.on("data", onStderr);
+    server.on("exit", onExit);
+    server.on("error", onError);
+  });
+
+const waitForExit = (server) =>
+  new Promise((resolve, reject) => {
+    let stdout = "";
+    let stderr = "";
+
+    const timeout = setTimeout(() => {
+      cleanup();
+      server.kill();
+      reject(new Error(`server did not exit in time. stderr: ${stderr}`));
+    }, 5000);
+
+    const cleanup = () => {
+      clearTimeout(timeout);
+      server.stdout.off("data", onStdout);
+      server.stderr.off("data", onStderr);
+      server.off("exit", onExit);
+      server.off("error", onError);
+    };
+
+    const onStdout = (chunk) => {
+      stdout += chunk.toString();
+    };
+
+    const onStderr = (chunk) => {
+      stderr += chunk.toString();
+    };
+
+    const onExit = (code, signal) => {
+      cleanup();
+      resolve({ code, signal, stdout, stderr });
     };
 
     const onError = (error) => {

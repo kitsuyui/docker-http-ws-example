@@ -23,6 +23,21 @@ I used this to test if a HTTPS -> HTTP proxy works with WebSocket connections.
 docker compose up --build
 ```
 
+For local runs, host and port can be configured with named flags:
+
+```sh
+npm start -- --host 127.0.0.1 --port 8000
+```
+
+The existing positional form is still supported:
+
+```sh
+node index.js 127.0.0.1 8000
+```
+
+When no command line values are provided, `HOST` and `PORT` environment
+variables are used before falling back to `127.0.0.1:8080`.
+
 ## Expected output
 
 ### Client (Web Browser)
