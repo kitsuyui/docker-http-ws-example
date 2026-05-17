@@ -2,8 +2,55 @@ import { createServer } from 'http';
 import { pathToFileURL } from 'url';
 import { WebSocketServer } from 'ws';
 
-const HOST = process.argv[2] || process.env.HOST || '127.0.0.1';
-const PORT = process.argv[3] || process.env.PORT || 8080;
+const DEFAULT_HOST = "127.0.0.1";
+const DEFAULT_PORT = 8080;
+
+export const resolveServerConfig = (
+  argv = process.argv.slice(2),
+  env = process.env,
+) => {
+  const positional = [];
+  const options = {};
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+
+    if (arg === "--host" || arg === "--port") {
+      const optionName = arg.slice(2);
+      const value = argv[index + 1];
+
+      if (value === undefined || value.startsWith("--")) {
+        throw new Error(`${arg} requires a value`);
+      }
+
+      options[optionName] = value;
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--host=") || arg.startsWith("--port=")) {
+      const [option, value] = arg.split("=", 2);
+
+      if (value === "") {
+        throw new Error(`${option} requires a value`);
+      }
+
+      options[option.slice(2)] = value;
+      continue;
+    }
+
+    if (arg.startsWith("--")) {
+      throw new Error(`Unknown option: ${arg}`);
+    }
+
+    positional.push(arg);
+  }
+
+  return {
+    host: options.host ?? positional[0] ?? env.HOST ?? DEFAULT_HOST,
+    port: options.port ?? positional[1] ?? env.PORT ?? DEFAULT_PORT,
+  };
+};
 
 export const createWebSocketAddress = (location) => {
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
@@ -11,8 +58,16 @@ export const createWebSocketAddress = (location) => {
 };
 
 const main = () => {
-  const host = HOST;
-  const port = PORT;
+  let config;
+
+  try {
+    config = resolveServerConfig();
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+
+  const { host, port } = config;
 
   const server = createServer((req, res) => {
     req
@@ -66,7 +121,7 @@ const main = () => {
   });
 
   server.listen(port, host);
-}
+};
 
 const contentJS = `
 const writeLog = (message) => {
