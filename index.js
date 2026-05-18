@@ -5,6 +5,24 @@ import { WebSocketServer } from 'ws';
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 8080;
 
+export const parsePort = (raw) => {
+  const n = Number(raw);
+  if (raw === "" || !Number.isInteger(n) || n < 0 || n > 65535) {
+    throw new Error(
+      `Invalid port: ${String(raw) || "(empty)"}. Expected an integer between 0 and 65535.`,
+    );
+  }
+  return n;
+};
+
+export const formatListenUrl = (addressInfo) => {
+  const host =
+    addressInfo.family === "IPv6"
+      ? `[${addressInfo.address}]`
+      : addressInfo.address;
+  return `http://${host}:${addressInfo.port}`;
+};
+
 export const resolveServerConfig = (
   argv = process.argv.slice(2),
   env = process.env,
@@ -48,7 +66,7 @@ export const resolveServerConfig = (
 
   return {
     host: options.host ?? positional[0] ?? env.HOST ?? DEFAULT_HOST,
-    port: options.port ?? positional[1] ?? env.PORT ?? DEFAULT_PORT,
+    port: parsePort(options.port ?? positional[1] ?? env.PORT ?? DEFAULT_PORT),
   };
 };
 
@@ -110,8 +128,7 @@ const main = () => {
   });
 
   server.on("listening", () => {
-    const addressInfo = server.address();
-    const url = `http://${addressInfo.address}:${addressInfo.port}`;
+    const url = formatListenUrl(server.address());
     console.error(`Server running at ${url}`);
   });
 

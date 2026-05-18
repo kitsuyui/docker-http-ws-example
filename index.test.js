@@ -153,6 +153,38 @@ test("unknown named flags fail before listening", async () => {
   assert.match(stderr, /Unknown option: --hostname/);
 });
 
+test("non-numeric port fails with a clear error before listening", async () => {
+  const server = spawn(
+    process.execPath,
+    ["index.js", "127.0.0.1", "abc"],
+    {
+      cwd: import.meta.dirname,
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
+
+  const { code, stderr } = await waitForExit(server);
+
+  assert.equal(code, 1);
+  assert.match(stderr, /Invalid port: abc/);
+});
+
+test("out-of-range port fails with a clear error before listening", async () => {
+  const server = spawn(
+    process.execPath,
+    ["index.js", "127.0.0.1", "99999"],
+    {
+      cwd: import.meta.dirname,
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
+
+  const { code, stderr } = await waitForExit(server);
+
+  assert.equal(code, 1);
+  assert.match(stderr, /Invalid port: 99999/);
+});
+
 test("websocket connection errors stay scoped to the client", async (t) => {
   const server = spawn(process.execPath, ["index.js", "127.0.0.1", "0"], {
     cwd: import.meta.dirname,
@@ -207,10 +239,11 @@ const waitForListeningAddress = (server) =>
 
     const onStderr = (chunk) => {
       stderr += chunk.toString();
-      const match = stderr.match(/Server running at http:\/\/([^:]+):(\d+)/);
+      const match = stderr.match(/Server running at (http:\/\/\S+)/);
       if (match) {
+        const url = new URL(match[1]);
         cleanup();
-        resolve({ host: match[1], port: Number(match[2]) });
+        resolve({ host: url.hostname, port: Number(url.port) });
       }
     };
 
