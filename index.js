@@ -70,7 +70,7 @@ export const resolveServerConfig = (
   };
 };
 
-export const createWebSocketAddress = (location) => {
+const createWebSocketAddress = (location) => {
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
   return `${protocol}//${location.host}`;
 };

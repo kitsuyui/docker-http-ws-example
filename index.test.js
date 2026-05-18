@@ -47,6 +47,7 @@ test("GET / returns 200 HTML with page content", async (t) => {
   assert.equal(statusCode, 200);
   assert.match(contentType, /text\/html/);
   assert.match(body, /<!DOCTYPE html>/);
+  assert.match(body, /const createWebSocketAddress = \(location\) =>/);
 });
 
 test("GET /unknown returns 404", async (t) => {
