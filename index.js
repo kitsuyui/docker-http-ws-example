@@ -127,6 +127,11 @@ const main = () => {
     });
   });
 
+  wsServer.on("error", (err) => {
+    console.error("wsServer error:", err);
+    process.exit(1);
+  });
+
   server.on("listening", () => {
     const url = formatListenUrl(server.address());
     console.error(`Server running at ${url}`);
