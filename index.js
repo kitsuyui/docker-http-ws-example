@@ -75,14 +75,26 @@ export const createWebSocketAddress = (location) => {
   return `${protocol}//${location.host}`;
 };
 
+const USAGE = `Usage: node index.js [--host HOST] [--port PORT]
+
+Options:
+  --host HOST   Hostname or IP address to listen on (default: 127.0.0.1, env: HOST)
+  --port PORT   Port number to listen on (default: 8080, env: PORT)
+  --help        Show this help message and exit`;
+
 const main = () => {
+  if (process.argv.slice(2).includes("--help")) {
+    console.log(USAGE);
+    process.exit(0);
+  }
+
   let config;
 
   try {
     config = resolveServerConfig();
   } catch (error) {
     console.error(error.message);
-    process.exit(1);
+    process.exit(2);
   }
 
   const { host, port } = config;
