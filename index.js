@@ -135,6 +135,7 @@ const main = () => {
   server.on("listening", () => {
     const url = formatListenUrl(server.address());
     console.error(`Server running at ${url}`);
+    process.stdout.write(JSON.stringify({ ready: true, url }) + "\n");
   });
 
   server.on("error", (err) => {
