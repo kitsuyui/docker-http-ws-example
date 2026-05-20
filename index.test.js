@@ -249,16 +249,23 @@ const waitForListeningAddress = (server) =>
 
     const onStdout = (chunk) => {
       stdout += chunk.toString();
+      for (const line of stdout.split("\n")) {
+        try {
+          const parsed = JSON.parse(line.trim());
+          if (parsed.ready && parsed.url) {
+            const url = new URL(parsed.url);
+            cleanup();
+            resolve({ host: url.hostname, port: Number(url.port) });
+            return;
+          }
+        } catch {
+          // not valid JSON, skip
+        }
+      }
     };
 
     const onStderr = (chunk) => {
       stderr += chunk.toString();
-      const match = stderr.match(/Server running at (http:\/\/\S+)/);
-      if (match) {
-        const url = new URL(match[1]);
-        cleanup();
-        resolve({ host: url.hostname, port: Number(url.port) });
-      }
     };
 
     const onExit = (code, signal) => {
