@@ -142,6 +142,19 @@ test("equals-form host and port flags configure the listening address", async (t
   assert.equal(host, "127.0.0.1");
 });
 
+test("--help prints usage to stdout and exits 0", async () => {
+  const server = spawn(process.execPath, ["index.js", "--help"], {
+    cwd: import.meta.dirname,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  const { code, stdout } = await waitForExit(server);
+
+  assert.equal(code, 0);
+  assert.match(stdout, /--host/);
+  assert.match(stdout, /--port/);
+});
+
 test("unknown named flags fail before listening", async () => {
   const server = spawn(process.execPath, ["index.js", "--hostname"], {
     cwd: import.meta.dirname,
@@ -150,7 +163,7 @@ test("unknown named flags fail before listening", async () => {
 
   const { code, stderr } = await waitForExit(server);
 
-  assert.equal(code, 1);
+  assert.equal(code, 2);
   assert.match(stderr, /Unknown option: --hostname/);
 });
 
@@ -166,7 +179,7 @@ test("non-numeric port fails with a clear error before listening", async () => {
 
   const { code, stderr } = await waitForExit(server);
 
-  assert.equal(code, 1);
+  assert.equal(code, 2);
   assert.match(stderr, /Invalid port: abc/);
 });
 
@@ -182,7 +195,7 @@ test("out-of-range port fails with a clear error before listening", async () => 
 
   const { code, stderr } = await waitForExit(server);
 
-  assert.equal(code, 1);
+  assert.equal(code, 2);
   assert.match(stderr, /Invalid port: 99999/);
 });
 
