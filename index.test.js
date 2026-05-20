@@ -204,7 +204,7 @@ test("websocket connection errors stay scoped to the client", async (t) => {
   });
 
   await sendInvalidUnmaskedFrame(rawSocket);
-  await waitForFrameHandling();
+  await waitForSocketClose(rawSocket);
 
   assert.equal(server.exitCode, null);
 
@@ -390,9 +390,36 @@ const sendInvalidUnmaskedFrame = (socket) =>
     });
   });
 
-const waitForFrameHandling = () =>
-  new Promise((resolve) => {
-    setTimeout(resolve, 100);
+const waitForSocketClose = (socket) =>
+  new Promise((resolve, reject) => {
+    if (socket.destroyed) {
+      resolve();
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error("timed out waiting for socket to close"));
+    }, 5000);
+
+    const cleanup = () => {
+      clearTimeout(timeout);
+      socket.off("close", onClose);
+      socket.off("error", onError);
+    };
+
+    const onClose = () => {
+      cleanup();
+      resolve();
+    };
+
+    const onError = (error) => {
+      cleanup();
+      reject(error);
+    };
+
+    socket.on("close", onClose);
+    socket.on("error", onError);
   });
 
 const readNextMessage = (ws) =>
