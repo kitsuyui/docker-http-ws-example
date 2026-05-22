@@ -23,6 +23,22 @@ export const formatListenUrl = (addressInfo) => {
   return `http://${host}:${addressInfo.port}`;
 };
 
+export const resolveHost = (...candidates) => {
+  for (const raw of candidates) {
+    if (raw === undefined || raw === null) {
+      continue;
+    }
+
+    const host = String(raw).trim();
+
+    if (host !== "") {
+      return host;
+    }
+  }
+
+  return DEFAULT_HOST;
+};
+
 export const resolveServerConfig = (
   argv = process.argv.slice(2),
   env = process.env,
@@ -65,7 +81,7 @@ export const resolveServerConfig = (
   }
 
   return {
-    host: options.host ?? positional[0] ?? env.HOST ?? DEFAULT_HOST,
+    host: resolveHost(options.host, positional[0], env.HOST),
     port: parsePort(options.port ?? positional[1] ?? env.PORT ?? DEFAULT_PORT),
   };
 };

@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { parsePort, formatListenUrl, resolveServerConfig } from "./index.js";
+import {
+  parsePort,
+  formatListenUrl,
+  resolveHost,
+  resolveServerConfig,
+} from "./index.js";
 
 test("parsePort accepts valid port numbers", () => {
   assert.equal(parsePort(0), 0);
@@ -40,12 +45,41 @@ test("formatListenUrl produces plain IPv4 URL", () => {
   );
 });
 
+test("resolveHost trims candidate host values", () => {
+  assert.equal(resolveHost(" localhost "), "localhost");
+  assert.equal(resolveHost("\t0.0.0.0\n"), "0.0.0.0");
+});
+
+test("resolveHost skips blank candidates and falls back to the default host", () => {
+  assert.equal(resolveHost(" ", "\t", " 0.0.0.0 "), "0.0.0.0");
+  assert.equal(resolveHost("", " "), "127.0.0.1");
+});
+
 test("resolveServerConfig uses default host and port", () => {
   const config = resolveServerConfig([], {});
   assert.equal(config.host, "127.0.0.1");
   assert.equal(config.port, 8080);
 });
 
+test("resolveServerConfig trims host values from argv and env", () => {
+  assert.equal(resolveServerConfig([" localhost "], {}).host, "localhost");
+  assert.equal(
+    resolveServerConfig([], { HOST: " 0.0.0.0 " }).host,
+    "0.0.0.0",
+  );
+});
+
+test("resolveServerConfig skips blank host values before falling back", () => {
+  assert.equal(
+    resolveServerConfig([" "], { HOST: " localhost " }).host,
+    "localhost",
+  );
+  assert.equal(resolveServerConfig(["--host", " "], {}).host, "127.0.0.1");
+});
+
 test("resolveServerConfig throws on invalid port from argv", () => {
-  assert.throws(() => resolveServerConfig(["127.0.0.1", "abc"], {}), /Invalid port: abc/);
+  assert.throws(
+    () => resolveServerConfig(["127.0.0.1", "abc"], {}),
+    /Invalid port: abc/,
+  );
 });
