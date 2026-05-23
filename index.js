@@ -86,6 +86,12 @@ export const resolveServerConfig = (
   };
 };
 
+// Serialization contract: this function is embedded into the browser <script>
+// via .toString() (see contentJS below). Any change must satisfy:
+//   1. No closures: do not reference variables from the outer Node.js scope.
+//   2. No Node.js-specific globals: the function runs in a browser context
+//      (no process, require, Buffer, etc.).
+// Violations silently pass Node.js tests but fail at browser runtime.
 const createWebSocketAddress = (location) => {
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
   return `${protocol}//${location.host}`;
