@@ -98,6 +98,39 @@ Options:
   --port PORT   Port number to listen on (default: 8080, env: PORT)
   --help        Show this help message and exit`;
 
+const sendResponse = (res, statusCode, headers, body) => {
+  if (res.writableEnded || res.destroyed) {
+    return;
+  }
+
+  if (!res.headersSent) {
+    res.writeHead(statusCode, headers);
+  }
+
+  res.end(body);
+};
+
+export const handleHttpRequest = (req, res) => {
+  req
+    .on("error", (err) => {
+      console.error("request error:", err);
+      sendResponse(
+        res,
+        400,
+        { "Content-Type": "text/plain", Connection: "close" },
+        "Bad Request",
+      );
+    })
+    .addListener("end", () => {
+      if (req.method === "GET" && req.url === "/") {
+        sendResponse(res, 200, { "Content-Type": "text/html" }, content);
+      } else {
+        sendResponse(res, 404, { "Content-Type": "text/plain" }, "Not Found");
+      }
+    })
+    .resume();
+};
+
 const main = () => {
   if (process.argv.slice(2).includes("--help")) {
     console.log(USAGE);
@@ -115,22 +148,7 @@ const main = () => {
 
   const { host, port } = config;
 
-  const server = createServer((req, res) => {
-    req
-      .on("error", (err) => {
-        console.error("request error:", err);
-      })
-      .addListener("end", () => {
-        if (req.method === "GET" && req.url === "/") {
-          res.writeHead(200, { "Content-Type": "text/html" });
-          res.end(content);
-        } else {
-          res.writeHead(404, { "Content-Type": "text/plain" });
-          res.end("Not Found");
-        }
-      })
-      .resume();
-  });
+  const server = createServer(handleHttpRequest);
 
   const wsServer = new WebSocketServer({ server });
 

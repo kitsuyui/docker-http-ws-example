@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
+import { EventEmitter } from "node:events";
+import { request } from "node:http";
 import { connect } from "node:net";
 import test from "node:test";
 import { WebSocket } from "ws";
-import { request } from "node:http";
+import { handleHttpRequest } from "./index.js";
 
 test("websocket connection supports server and client ping flow", async (t) => {
   const server = spawn(process.execPath, ["index.js", "127.0.0.1", "0"], {
@@ -80,6 +82,35 @@ test("POST / returns 404", async (t) => {
   const { statusCode } = await httpRequest("POST", `http://127.0.0.1:${port}/`);
 
   assert.equal(statusCode, 404);
+});
+
+test("request stream errors send and close a 400 response", () => {
+  const req = new EventEmitter();
+  req.method = "GET";
+  req.url = "/";
+  req.resume = () => req;
+
+  const res = createResponseRecorder();
+  const originalConsoleError = console.error;
+  const errors = [];
+
+  console.error = (...args) => {
+    errors.push(args);
+  };
+
+  try {
+    handleHttpRequest(req, res);
+    req.emit("error", new Error("socket reset"));
+  } finally {
+    console.error = originalConsoleError;
+  }
+
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.headers["Content-Type"], "text/plain");
+  assert.equal(res.headers.Connection, "close");
+  assert.equal(res.body, "Bad Request");
+  assert.equal(res.writableEnded, true);
+  assert.equal(errors.length, 1);
 });
 
 test("command line host and port override environment defaults", async (t) => {
@@ -505,3 +536,23 @@ const httpRequest = (method, url) =>
   });
 
 const httpGet = (url) => httpRequest("GET", url);
+
+const createResponseRecorder = () => ({
+  body: undefined,
+  destroyed: false,
+  headers: {},
+  headersSent: false,
+  statusCode: undefined,
+  writableEnded: false,
+  end(body) {
+    this.body = body;
+    this.writableEnded = true;
+    return this;
+  },
+  writeHead(statusCode, headers) {
+    this.statusCode = statusCode;
+    this.headers = headers;
+    this.headersSent = true;
+    return this;
+  },
+});
