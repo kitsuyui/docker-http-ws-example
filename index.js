@@ -163,6 +163,11 @@ const main = () => {
       console.error(`WebSocket error: ${error.message}`);
     });
 
+    ws.on("close", (code, reason) => {
+      const reasonStr = reason.length > 0 ? `, reason=${reason}` : "";
+      console.error(`WebSocket closed: code=${code}${reasonStr}`);
+    });
+
     console.error("Sending: PING");
     ws.send("PING", (err) => {
       if (err) console.error("ws send error:", err);
