@@ -4,6 +4,7 @@ import { WebSocketServer } from 'ws';
 
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 8080;
+const DEFAULT_WEBSOCKET_ENDPOINT = "";
 
 export const parsePort = (raw) => {
   const n = Number(raw);
@@ -49,7 +50,11 @@ export const resolveServerConfig = (
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
 
-    if (arg === "--host" || arg === "--port") {
+    if (
+      arg === "--host" ||
+      arg === "--port" ||
+      arg === "--websocket-endpoint"
+    ) {
       const optionName = arg.slice(2);
       const value = argv[index + 1];
 
@@ -62,7 +67,11 @@ export const resolveServerConfig = (
       continue;
     }
 
-    if (arg.startsWith("--host=") || arg.startsWith("--port=")) {
+    if (
+      arg.startsWith("--host=") ||
+      arg.startsWith("--port=") ||
+      arg.startsWith("--websocket-endpoint=")
+    ) {
       const [option, value] = arg.split("=", 2);
 
       if (value === "") {
@@ -83,6 +92,10 @@ export const resolveServerConfig = (
   return {
     host: resolveHost(options.host, positional[0], env.HOST),
     port: parsePort(options.port ?? positional[1] ?? env.PORT ?? DEFAULT_PORT),
+    websocketEndpoint:
+      options["websocket-endpoint"] ??
+      env.WEBSOCKET_ENDPOINT ??
+      DEFAULT_WEBSOCKET_ENDPOINT,
   };
 };
 
@@ -92,17 +105,41 @@ export const resolveServerConfig = (
 //   2. No Node.js-specific globals: the function runs in a browser context
 //      (no process, require, Buffer, etc.).
 // Violations silently pass Node.js tests but fail at browser runtime.
-const createWebSocketAddress = (location) => {
-  const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${location.host}`;
+const createWebSocketAddress = (location, endpoint) => {
+  const rawEndpoint =
+    typeof endpoint === "string" && endpoint.trim() !== ""
+      ? endpoint.trim()
+      : location.pathname || "/";
+  const url = new URL(rawEndpoint, `${location.protocol}//${location.host}`);
+
+  if (url.protocol === "http:") {
+    url.protocol = "ws:";
+  } else if (url.protocol === "https:") {
+    url.protocol = "wss:";
+  }
+
+  if (url.protocol !== "ws:" && url.protocol !== "wss:") {
+    throw new Error(`Unsupported WebSocket endpoint protocol: ${url.protocol}`);
+  }
+
+  return url.href;
 };
 
-const USAGE = `Usage: node index.js [--host HOST] [--port PORT]
+const USAGE = `Usage: node index.js [--host HOST] [--port PORT] [--websocket-endpoint URL_OR_PATH]
 
 Options:
-  --host HOST   Hostname or IP address to listen on (default: 127.0.0.1, env: HOST)
-  --port PORT   Port number to listen on (default: 8080, env: PORT)
-  --help        Show this help message and exit`;
+  --host HOST                 Hostname or IP address to listen on (default: 127.0.0.1, env: HOST)
+  --port PORT                 Port number to listen on (default: 8080, env: PORT)
+  --websocket-endpoint URL_OR_PATH
+                              WebSocket URL or path for the browser client (env: WEBSOCKET_ENDPOINT)
+  --help                      Show this help message and exit`;
+
+const escapeHtmlAttribute = (value) =>
+  String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
 
 const sendResponse = (res, statusCode, headers, body) => {
   if (res.writableEnded || res.destroyed) {
@@ -116,7 +153,25 @@ const sendResponse = (res, statusCode, headers, body) => {
   res.end(body);
 };
 
-export const handleHttpRequest = (req, res) => {
+export const renderContent = ({ websocketEndpoint = "" } = {}) => {
+  const endpointAttribute =
+    websocketEndpoint === ""
+      ? ""
+      : ` data-websocket-endpoint="${escapeHtmlAttribute(websocketEndpoint)}"`;
+
+  return `<!DOCTYPE html>
+<html>
+  <head>
+    <title>WebSocket Test</title>
+  </head>
+  <body>
+    <script${endpointAttribute}>${contentJS}</script>
+    <div id="log"></div>
+  </body>
+</html>`;
+};
+
+export const handleHttpRequest = (req, res, options = {}) => {
   req
     .on("error", (err) => {
       console.error("request error:", err);
@@ -129,7 +184,12 @@ export const handleHttpRequest = (req, res) => {
     })
     .addListener("end", () => {
       if (req.method === "GET" && req.url === "/") {
-        sendResponse(res, 200, { "Content-Type": "text/html" }, content);
+        sendResponse(
+          res,
+          200,
+          { "Content-Type": "text/html" },
+          renderContent(options),
+        );
       } else {
         sendResponse(res, 404, { "Content-Type": "text/plain" }, "Not Found");
       }
@@ -154,7 +214,7 @@ const main = () => {
 
   const { host, port } = config;
 
-  const server = createServer(handleHttpRequest);
+  const server = createServer((req, res) => handleHttpRequest(req, res, config));
 
   const wsServer = new WebSocketServer({ server });
 
@@ -212,9 +272,18 @@ const writeLogToHTML = (message) => {
   log.appendChild(p);
 };
 
+const configuredEndpoint =
+  document.currentScript?.dataset.websocketEndpoint ?? "";
+
 const setupWebSocket = () => {
   const createWebSocketAddress = ${createWebSocketAddress.toString()};
-  const addr = createWebSocketAddress(location);
+  let addr;
+  try {
+    addr = createWebSocketAddress(location, configuredEndpoint);
+  } catch (error) {
+    writeLog(error.message);
+    return;
+  }
   const ws = new WebSocket(addr);
   ws.onopen = () => {
     writeLog("Connected to WebSocket server");
@@ -238,17 +307,6 @@ const setupWebSocket = () => {
 
 document.addEventListener("DOMContentLoaded", setupWebSocket);
 `;
-
-const content = `<!DOCTYPE html>
-<html>
-  <head>
-    <title>WebSocket Test</title>
-  </head>
-  <body>
-    <script>${contentJS}</script>
-    <div id="log"></div>
-  </body>
-</html>`;
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();

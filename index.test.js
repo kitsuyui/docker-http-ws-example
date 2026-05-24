@@ -49,7 +49,21 @@ test("GET / returns 200 HTML with page content", async (t) => {
   assert.equal(statusCode, 200);
   assert.match(contentType, /text\/html/);
   assert.match(body, /<!DOCTYPE html>/);
-  assert.match(body, /const createWebSocketAddress = \(location\) =>/);
+  assert.match(body, /const createWebSocketAddress = \(location, endpoint\) =>/);
+});
+
+test("GET / can embed a configured websocket endpoint", () => {
+  const req = new EventEmitter();
+  req.method = "GET";
+  req.url = "/";
+  req.resume = () => req;
+
+  const res = createResponseRecorder();
+  handleHttpRequest(req, res, { websocketEndpoint: "/socket" });
+  req.emit("end");
+
+  assert.equal(res.statusCode, 200);
+  assert.match(res.body, /data-websocket-endpoint="\/socket"/);
 });
 
 test("GET /unknown returns 404", async (t) => {
