@@ -38,6 +38,17 @@ node index.js 127.0.0.1 8000
 When no command line values are provided, `HOST` and `PORT` environment
 variables are used before falling back to `127.0.0.1:8080`.
 
+The browser client connects to the WebSocket endpoint at the current page path
+by default. For example, a page served at `/proxy/app/` connects to
+`/proxy/app/` over `ws:` or `wss:`. Set `--websocket-endpoint` or
+`WEBSOCKET_ENDPOINT` when a proxy exposes the WebSocket server at a different
+path or origin:
+
+```sh
+npm start -- --websocket-endpoint /socket
+WEBSOCKET_ENDPOINT=wss://ws.example.test/socket npm start
+```
+
 ## Expected output
 
 ### Client (Web Browser)

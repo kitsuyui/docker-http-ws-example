@@ -59,6 +59,7 @@ test("resolveServerConfig uses default host and port", () => {
   const config = resolveServerConfig([], {});
   assert.equal(config.host, "127.0.0.1");
   assert.equal(config.port, 8080);
+  assert.equal(config.websocketEndpoint, "");
 });
 
 test("resolveServerConfig trims host values from argv and env", () => {
@@ -81,5 +82,26 @@ test("resolveServerConfig throws on invalid port from argv", () => {
   assert.throws(
     () => resolveServerConfig(["127.0.0.1", "abc"], {}),
     /Invalid port: abc/,
+  );
+});
+
+test("resolveServerConfig reads websocket endpoint from env", () => {
+  assert.equal(
+    resolveServerConfig([], { WEBSOCKET_ENDPOINT: "/socket" })
+      .websocketEndpoint,
+    "/socket",
+  );
+});
+
+test("resolveServerConfig reads websocket endpoint from named flags", () => {
+  assert.equal(
+    resolveServerConfig(["--websocket-endpoint", "/socket"], {})
+      .websocketEndpoint,
+    "/socket",
+  );
+  assert.equal(
+    resolveServerConfig(["--websocket-endpoint=wss://example.test/ws"], {})
+      .websocketEndpoint,
+    "wss://example.test/ws",
   );
 });
