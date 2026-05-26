@@ -1,4 +1,5 @@
 import { createServer } from 'http';
+import { readFileSync } from 'fs';
 import { pathToFileURL } from 'url';
 import { WebSocketServer } from 'ws';
 
@@ -99,32 +100,6 @@ export const resolveServerConfig = (
   };
 };
 
-// Serialization contract: this function is embedded into the browser <script>
-// via .toString() (see contentJS below). Any change must satisfy:
-//   1. No closures: do not reference variables from the outer Node.js scope.
-//   2. No Node.js-specific globals: the function runs in a browser context
-//      (no process, require, Buffer, etc.).
-// Violations silently pass Node.js tests but fail at browser runtime.
-const createWebSocketAddress = (location, endpoint) => {
-  const rawEndpoint =
-    typeof endpoint === "string" && endpoint.trim() !== ""
-      ? endpoint.trim()
-      : location.pathname || "/";
-  const url = new URL(rawEndpoint, `${location.protocol}//${location.host}`);
-
-  if (url.protocol === "http:") {
-    url.protocol = "ws:";
-  } else if (url.protocol === "https:") {
-    url.protocol = "wss:";
-  }
-
-  if (url.protocol !== "ws:" && url.protocol !== "wss:") {
-    throw new Error(`Unsupported WebSocket endpoint protocol: ${url.protocol}`);
-  }
-
-  return url.href;
-};
-
 const USAGE = `Usage: node index.js [--host HOST] [--port PORT] [--websocket-endpoint URL_OR_PATH]
 
 Options:
@@ -152,6 +127,8 @@ const sendResponse = (res, statusCode, headers, body) => {
 
   res.end(body);
 };
+
+const contentJS = readFileSync(new URL("./client.js", import.meta.url), "utf8");
 
 export const renderContent = ({ websocketEndpoint = "" } = {}) => {
   const endpointAttribute =
@@ -262,56 +239,6 @@ const main = () => {
 
   server.listen(port, host);
 };
-
-const contentJS = `
-const writeLog = (message) => {
-  console.log(message);
-  writeLogToHTML(message);
-};
-
-const writeLogToHTML = (message) => {
-  const log = document.getElementById("log");
-  const p = document.createElement("p");
-  const currentTime = new Date().toISOString();
-  p.textContent = \`[\${currentTime}] \${message}\`;
-  log.appendChild(p);
-};
-
-const configuredEndpoint =
-  document.currentScript?.dataset.websocketEndpoint ?? "";
-
-const setupWebSocket = () => {
-  const createWebSocketAddress = ${createWebSocketAddress.toString()};
-  let addr;
-  try {
-    addr = createWebSocketAddress(location, configuredEndpoint);
-  } catch (error) {
-    writeLog(error.message);
-    return;
-  }
-  const ws = new WebSocket(addr);
-  ws.onopen = () => {
-    writeLog("Connected to WebSocket server");
-    writeLog("Sending: PING");
-    ws.send("PING");
-  };
-  ws.onmessage = (event) => {
-    writeLog("Received: " + event.data);
-    if (event.data === "PING") {
-      writeLog("Sending: PONG");
-      ws.send("PONG");
-    }
-  };
-  ws.onclose = () => {
-    writeLog("Disconnected from WebSocket server");
-  };
-  ws.onerror = () => {
-    writeLog("WebSocket error");
-  };
-};
-
-document.addEventListener("DOMContentLoaded", setupWebSocket);
-`;
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();
