@@ -244,6 +244,37 @@ test("out-of-range port fails with a clear error before listening", async () => 
   assert.match(stderr, /Invalid port: 99999/);
 });
 
+test("SIGTERM closes active WebSocket connections with code 1001 and exits cleanly", async (t) => {
+  const proc = spawn(process.execPath, ["index.js", "127.0.0.1", "0"], {
+    cwd: import.meta.dirname,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  t.after(() => {
+    proc.kill();
+  });
+
+  const { port } = await waitForListeningAddress(proc);
+  const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+
+  t.after(() => {
+    ws.terminate();
+  });
+
+  assert.equal(await readNextMessage(ws), "PING");
+
+  const closePromise = new Promise((resolve) => {
+    ws.on("close", (code) => resolve(code));
+  });
+  const exitPromise = waitForExit(proc);
+
+  proc.kill("SIGTERM");
+
+  assert.equal(await closePromise, 1001);
+  const { code } = await exitPromise;
+  assert.equal(code, 0);
+});
+
 test("websocket connection errors stay scoped to the client", async (t) => {
   const server = spawn(process.execPath, ["index.js", "127.0.0.1", "0"], {
     cwd: import.meta.dirname,
