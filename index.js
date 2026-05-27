@@ -216,7 +216,7 @@ const main = () => {
 
   const server = createServer((req, res) => handleHttpRequest(req, res, config));
 
-  const wsServer = new WebSocketServer({ server });
+  const wsServer = new WebSocketServer({ server, maxPayload: 65536 });
 
   wsServer.on("connection", (ws) => {
     ws.on("error", (error) => {
@@ -234,8 +234,9 @@ const main = () => {
     });
 
     ws.on("message", (message) => {
-      console.error(`Received: ${message}`);
-      if (message.toString() === "PING") {
+      const msg = message.toString();
+      console.error(`Received: ${msg}`);
+      if (msg === "PING") {
         console.error("Sending: PONG");
         ws.send("PONG", (err) => {
           if (err) console.error("ws send error:", err);
