@@ -238,6 +238,21 @@ const main = () => {
     process.exit(1);
   });
 
+  const shutdown = (signal) => {
+    console.error(`${signal} received, shutting down`);
+    for (const ws of wsServer.clients) {
+      ws.close(1001, "Server shutting down");
+    }
+    wsServer.close(() => {
+      server.close(() => {
+        process.exit(0);
+      });
+    });
+  };
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+
   server.listen(port, host);
 };
 
