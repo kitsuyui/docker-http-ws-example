@@ -215,7 +215,7 @@ const main = () => {
     ws.on("message", (message) => {
       const msg = message.toString();
       console.error(`Received: ${escapeLogValue(msg)}`);
-      if (msg === "PING") {
+      if (msg === "PING" && ws.readyState === ws.OPEN) {
         console.error("Sending: PONG");
         ws.send("PONG", (err) => {
           if (err) console.error("ws send error:", err);
