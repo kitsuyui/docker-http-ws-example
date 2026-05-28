@@ -343,6 +343,8 @@ const waitForListeningAddress = (server) =>
     let stderr = "";
 
     const timeout = setTimeout(() => {
+      cleanup();
+      server.kill();
       reject(new Error(`server did not start in time. stderr: ${stderr}`));
     }, 5000);
 
