@@ -25,6 +25,8 @@ export const formatListenUrl = (addressInfo) => {
   return `http://${host}:${addressInfo.port}`;
 };
 
+const escapeLogValue = (value) => JSON.stringify(String(value)).slice(1, -1);
+
 export const resolveHost = (...candidates) => {
   for (const raw of candidates) {
     if (raw === undefined || raw === null) {
@@ -212,7 +214,7 @@ const main = () => {
 
     ws.on("message", (message) => {
       const msg = message.toString();
-      console.error(`Received: ${msg}`);
+      console.error(`Received: ${escapeLogValue(msg)}`);
       if (msg === "PING") {
         console.error("Sending: PONG");
         ws.send("PONG", (err) => {

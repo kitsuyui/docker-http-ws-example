@@ -31,6 +31,37 @@ test("websocket connection supports server and client ping flow", async (t) => {
   assert.equal(await readNextMessage(ws), "PONG");
 });
 
+test("websocket message logs escape control characters", async (t) => {
+  const server = spawn(process.execPath, ["index.js", "127.0.0.1", "0"], {
+    cwd: import.meta.dirname,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  t.after(() => {
+    server.kill();
+  });
+
+  const { port } = await waitForListeningAddress(server);
+  const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+
+  t.after(() => {
+    ws.close();
+  });
+
+  assert.equal(await readNextMessage(ws), "PING");
+
+  ws.send("PING\n[INFO] forged\r\u001b[31m");
+
+  const receivedLog = await waitForStderrLine(server, (line) =>
+    line.startsWith("Received: "),
+  );
+
+  assert.equal(receivedLog, "Received: PING\\n[INFO] forged\\r\\u001b[31m");
+  assert.equal(receivedLog.includes("\n"), false);
+  assert.equal(receivedLog.includes("\r"), false);
+  assert.equal(receivedLog.includes("\u001b"), false);
+});
+
 test("GET / returns 200 HTML with page content", async (t) => {
   const server = spawn(process.execPath, ["index.js", "127.0.0.1", "0"], {
     cwd: import.meta.dirname,
@@ -355,6 +386,50 @@ const waitForListeningAddress = (server) =>
     };
 
     server.stdout.on("data", onStdout);
+    server.stderr.on("data", onStderr);
+    server.on("exit", onExit);
+    server.on("error", onError);
+  });
+
+const waitForStderrLine = (server, predicate) =>
+  new Promise((resolve, reject) => {
+    let stderr = "";
+
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error(`timed out waiting for stderr line. stderr: ${stderr}`));
+    }, 5000);
+
+    const cleanup = () => {
+      clearTimeout(timeout);
+      server.stderr.off("data", onStderr);
+      server.off("exit", onExit);
+      server.off("error", onError);
+    };
+
+    const onStderr = (chunk) => {
+      stderr += chunk.toString();
+      const lines = stderr.split("\n");
+      stderr = lines.pop() ?? "";
+      for (const line of lines) {
+        if (predicate(line)) {
+          cleanup();
+          resolve(line);
+          return;
+        }
+      }
+    };
+
+    const onExit = (code, signal) => {
+      cleanup();
+      reject(new Error(`server exited before stderr match: ${code ?? signal}`));
+    };
+
+    const onError = (error) => {
+      cleanup();
+      reject(error);
+    };
+
     server.stderr.on("data", onStderr);
     server.on("exit", onExit);
     server.on("error", onError);
