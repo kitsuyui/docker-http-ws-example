@@ -73,6 +73,22 @@ Sending: PONG
 Received: PONG
 ```
 
+## Development
+
+Install [lefthook](https://github.com/evilmartians/lefthook) and register the Git hooks:
+
+```sh
+lefthook install
+```
+
+The following hooks are configured:
+
+- **pre-push**: runs `pnpm run test` (syntax check + test suite)
+
+These hooks mirror the checks that CI runs on every pull request and push to
+`main`, so problems are caught locally before they reach the remote.
+CI still runs the full suite independently — the hooks bring feedback earlier.
+
 ## License
 
 ISC
