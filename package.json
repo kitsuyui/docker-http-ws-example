@@ -7,7 +7,7 @@
   "private": true,
   "scripts": {
     "start": "node index.js",
-    "test": "node --check index.js && node --check client.js && node --test"
+    "test": "node --check index.js && node --check client.js && node --experimental-test-coverage --test"
   },
   "type": "module",
   "keywords": [],
