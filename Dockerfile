@@ -6,4 +6,5 @@ RUN pnpm install --frozen-lockfile --prod
 COPY index.js client.js ./
 ENV HOST=0.0.0.0
 ENV PORT=8000
+USER node
 CMD ["pnpm", "--silent", "start"]
