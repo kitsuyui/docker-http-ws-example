@@ -6,6 +6,18 @@ import { WebSocketServer } from 'ws';
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 8080;
 const DEFAULT_WEBSOCKET_ENDPOINT = "";
+export const SECURITY_HEADERS = Object.freeze({
+  "Content-Security-Policy": [
+    "default-src 'none'",
+    "script-src 'self' 'unsafe-inline'",
+    "connect-src 'self' ws: wss:",
+    "base-uri 'none'",
+    "form-action 'none'",
+    "frame-ancestors 'none'",
+  ].join("; "),
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+});
 
 export const parsePort = (raw) => {
   const n = Number(raw);
@@ -124,7 +136,7 @@ const sendResponse = (res, statusCode, headers, body) => {
   }
 
   if (!res.headersSent) {
-    res.writeHead(statusCode, headers);
+    res.writeHead(statusCode, { ...headers, ...SECURITY_HEADERS });
   }
 
   res.end(body);
