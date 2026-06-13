@@ -41,4 +41,4 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name == 'release' && !github.event.release.prerelease }}
-          tags: ${{ env.REGISTRY_IMAGE }}:${{ github.event.release.tag_name }},${{ env.REGISTRY_IMAGE }}:latest
+          tags: ${{ env.REGISTRY_IMAGE }}:${{ github.event.release.tag_name || 'latest' }},${{ env.REGISTRY_IMAGE }}:latest
