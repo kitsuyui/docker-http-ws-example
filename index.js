@@ -166,7 +166,7 @@ export const handleHttpRequest = (req, res, options = {}) => {
         sendResponse(
           res,
           200,
-          { "Content-Type": "text/html" },
+          { "Content-Type": "text/html", "Cache-Control": "no-store" },
           renderContent(options),
         );
       } else {
