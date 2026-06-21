@@ -130,7 +130,7 @@ const sendResponse = (res, statusCode, headers, body) => {
   res.end(body);
 };
 
-const contentJS = readFileSync(new URL("./client.js", import.meta.url), "utf8");
+const contentJS = readFileSync(new URL("./public/client.js", import.meta.url), "utf8");
 
 export const renderContent = ({ websocketEndpoint = "" } = {}) => {
   const endpointAttribute =

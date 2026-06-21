@@ -3,7 +3,8 @@ WORKDIR /app
 RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod
-COPY index.js client.js ./
+COPY index.js ./
+COPY public/ ./public/
 ENV HOST=0.0.0.0
 ENV PORT=8000
 CMD ["pnpm", "--silent", "start"]
