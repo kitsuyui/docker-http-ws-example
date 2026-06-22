@@ -11,6 +11,26 @@ I used this to test if a HTTPS -> HTTP proxy works with WebSocket connections.
 - The server is not secure and does not handle errors properly.
 - The server is not optimized for performance.
 
+## Security model
+
+The server has **no authentication, no origin check, and no TLS**.
+Any client that can reach the listening address can connect over HTTP or WebSocket.
+
+| Run mode | Default bind | Reachable from |
+| --- | --- | --- |
+| `npm start` (no args) | `127.0.0.1` | localhost only |
+| `docker compose up` | `0.0.0.0` inside the container, published via `ports: 8000:8000` | any host on the Docker host's network |
+
+The Docker Compose configuration intentionally binds `0.0.0.0` so the container
+port is reachable from the host. This is correct for a local proxy test, but it
+means the server is reachable by any process or browser on the same machine (or
+the same network segment if the host is multi-homed or on a shared network).
+
+**Safe usage:** run with `docker compose up` on a machine where network access is
+already controlled (e.g. a laptop on a private network, or a VM with no external
+port exposure). Do not run with `docker compose up` on a server exposed to the
+internet without an additional access-control layer in front of it.
+
 ## Proxy Setup
 
 - frp ... https://github.com/kitsuyui/docker-http-ws-example/tree/frp
