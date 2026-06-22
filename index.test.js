@@ -6,7 +6,7 @@ import { request } from "node:http";
 import { connect } from "node:net";
 import test from "node:test";
 import { WebSocket } from "ws";
-import { handleHttpRequest } from "./index.js";
+import { SECURITY_HEADERS, handleHttpRequest } from "./index.js";
 
 test("websocket connection supports server and client ping flow", async (t) => {
   const server = spawn(process.execPath, ["index.js", "127.0.0.1", "0"], {
@@ -83,6 +83,22 @@ test("GET / returns 200 HTML with page content", async (t) => {
   assert.match(body, /const createWebSocketAddress = \(location, endpoint\) =>/);
 });
 
+test("GET / returns browser security headers", async (t) => {
+  const server = spawn(process.execPath, ["index.js", "127.0.0.1", "0"], {
+    cwd: import.meta.dirname,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  t.after(() => {
+    server.kill();
+  });
+
+  const { port } = await waitForListeningAddress(server);
+  const { headers } = await httpGet(`http://127.0.0.1:${port}/`);
+
+  assertSecurityHeaders(headers);
+});
+
 test("GET / can embed a configured websocket endpoint", () => {
   const req = new EventEmitter();
   req.method = "GET";
@@ -108,9 +124,12 @@ test("GET /unknown returns 404", async (t) => {
   });
 
   const { port } = await waitForListeningAddress(server);
-  const { statusCode } = await httpGet(`http://127.0.0.1:${port}/favicon.ico`);
+  const { statusCode, headers } = await httpGet(
+    `http://127.0.0.1:${port}/favicon.ico`,
+  );
 
   assert.equal(statusCode, 404);
+  assertSecurityHeaders(headers);
 });
 
 test("POST / returns 404", async (t) => {
@@ -153,6 +172,7 @@ test("request stream errors send and close a 400 response", () => {
   assert.equal(res.statusCode, 400);
   assert.equal(res.headers["Content-Type"], "text/plain");
   assert.equal(res.headers.Connection, "close");
+  assertSecurityHeaders(res.headers);
   assert.equal(res.body, "Bad Request");
   assert.equal(res.writableEnded, true);
   assert.equal(errors.length, 1);
@@ -648,6 +668,7 @@ const httpRequest = (method, url) =>
           resolve({
             statusCode: res.statusCode,
             contentType: res.headers["content-type"] ?? "",
+            headers: res.headers,
             body,
           });
         });
@@ -658,6 +679,18 @@ const httpRequest = (method, url) =>
   });
 
 const httpGet = (url) => httpRequest("GET", url);
+
+const assertSecurityHeaders = (headers) => {
+  assert.equal(
+    headers["content-security-policy"] ?? headers["Content-Security-Policy"],
+    SECURITY_HEADERS["Content-Security-Policy"],
+  );
+  assert.equal(
+    headers["x-content-type-options"] ?? headers["X-Content-Type-Options"],
+    "nosniff",
+  );
+  assert.equal(headers["x-frame-options"] ?? headers["X-Frame-Options"], "DENY");
+};
 
 const createResponseRecorder = () => ({
   body: undefined,
