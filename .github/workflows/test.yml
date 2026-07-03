@@ -32,3 +32,43 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Build Docker image
+        run: docker build --tag docker-http-ws-example:ci .
+
+      - name: Start container
+        run: |
+          container_id="$(
+            docker run \
+              --detach \
+              --publish 127.0.0.1::8000 \
+              docker-http-ws-example:ci
+          )"
+          port="$(docker port "$container_id" 8000/tcp | awk -F: '{print $NF}')"
+          echo "CONTAINER_ID=$container_id" >> "$GITHUB_ENV"
+          echo "SMOKE_URL=http://127.0.0.1:$port/" >> "$GITHUB_ENV"
+
+      - name: Smoke test container
+        run: |
+          for _ in $(seq 1 30); do
+            body="$(curl --fail --silent "$SMOKE_URL" || true)"
+            if printf '%s' "$body" | grep --quiet '<!DOCTYPE html>'; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs "$CONTAINER_ID"
+          exit 1
+
+      - name: Stop container
+        if: always()
+        run: |
+          if [ -n "${CONTAINER_ID:-}" ]; then
+            docker rm --force "$CONTAINER_ID"
+          fi
