@@ -86,7 +86,7 @@ Open the browser and navigate to `http://localhost:8000`.
 ### Server (Terminal)
 
 ```
-Server running at http://0.0.0.0:8000
+Server running at http://localhost:8000
 Sending: PING
 Received: PING
 Sending: PONG

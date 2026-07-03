@@ -45,6 +45,17 @@ test("formatListenUrl produces plain IPv4 URL", () => {
   );
 });
 
+test("formatListenUrl reports localhost for wildcard bind addresses", () => {
+  assert.equal(
+    formatListenUrl({ address: "0.0.0.0", port: 8000, family: "IPv4" }),
+    "http://localhost:8000",
+  );
+  assert.equal(
+    formatListenUrl({ address: "::", port: 8000, family: "IPv6" }),
+    "http://localhost:8000",
+  );
+});
+
 test("resolveHost trims candidate host values", () => {
   assert.equal(resolveHost(" localhost "), "localhost");
   assert.equal(resolveHost("\t0.0.0.0\n"), "0.0.0.0");

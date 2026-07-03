@@ -30,8 +30,11 @@ export const parsePort = (raw) => {
 };
 
 export const formatListenUrl = (addressInfo) => {
-  const host =
-    addressInfo.family === "IPv6"
+  const isWildcardBind =
+    addressInfo.address === "0.0.0.0" || addressInfo.address === "::";
+  const host = isWildcardBind
+    ? "localhost"
+    : addressInfo.family === "IPv6"
       ? `[${addressInfo.address}]`
       : addressInfo.address;
   return `http://${host}:${addressInfo.port}`;
