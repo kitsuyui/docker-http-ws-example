@@ -113,6 +113,19 @@ test("GET / can embed a configured websocket endpoint", () => {
   assert.match(res.body, /data-websocket-endpoint="\/socket"/);
 });
 
+test("GET / sets Cache-Control: no-store to prevent stale content", () => {
+  const req = new EventEmitter();
+  req.method = "GET";
+  req.url = "/";
+  req.resume = () => req;
+
+  const res = createResponseRecorder();
+  handleHttpRequest(req, res);
+  req.emit("end");
+
+  assert.equal(res.headers["Cache-Control"], "no-store");
+});
+
 test("GET /unknown returns 404", async (t) => {
   const server = spawn(process.execPath, ["index.js", "127.0.0.1", "0"], {
     cwd: import.meta.dirname,
