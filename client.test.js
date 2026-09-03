@@ -128,20 +128,16 @@ test("ws.onerror logs an error message", () => {
   );
 });
 
-test("writeLog appends a timestamped entry to the DOM #log div", () => {
+test("writeLog appends a deterministic entry to the DOM #log div", () => {
   const { events, getWs, domEntries } = runClient(renderContent());
   events.DOMContentLoaded();
   getWs().onopen();
 
   assert.ok(domEntries.length > 0, "should append at least one entry to #log");
-  assert.ok(
-    domEntries[0].includes("Connected"),
-    "first #log entry should mention Connected",
-  );
-  assert.match(
+  assert.equal(
     domEntries[0],
-    /^\[.+\] /,
-    "log entries should start with a [timestamp] prefix",
+    "Connected to WebSocket server",
+    "first #log entry should match the logged message exactly",
   );
 });
 

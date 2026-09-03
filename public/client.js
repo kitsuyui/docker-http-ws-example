@@ -6,8 +6,7 @@ const writeLog = (message) => {
 const writeLogToHTML = (message) => {
   const log = document.getElementById("log");
   const p = document.createElement("p");
-  const currentTime = new Date().toISOString();
-  p.textContent = `[${currentTime}] ${message}`;
+  p.textContent = message;
   log.appendChild(p);
 };
 

@@ -76,11 +76,11 @@ WEBSOCKET_ENDPOINT=wss://ws.example.test/socket npm start
 Open the browser and navigate to `http://localhost:8000`.
 
 ```
-[2025-01-01T01:23:45.678Z] Connected to WebSocket server
-[2025-01-01T01:23:45.679Z] Sending: PING
-[2025-01-01T01:23:45.680Z] Received: PING
-[2025-01-01T01:23:45.681Z] Sending: PONG
-[2025-01-01T01:23:45.682Z] Received: PONG
+Connected to WebSocket server
+Sending: PING
+Received: PING
+Sending: PONG
+Received: PONG
 ```
 
 ### Server (Terminal)
