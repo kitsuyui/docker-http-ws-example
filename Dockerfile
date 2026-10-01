@@ -1,4 +1,4 @@
-FROM node:26-bookworm@sha256:acb7243cabea678dc927ec9020c633d3d82b37b86b1bbcd49dd3f95f6b77ba89 AS base
+FROM node:26-bookworm@sha256:2aaae6d91f99fee84cfc92da9b52c22a185752d247746052bbc3f961e44478c6 AS base
 WORKDIR /app
 RUN npm install -g corepack && corepack enable
 COPY package.json pnpm-lock.yaml ./
